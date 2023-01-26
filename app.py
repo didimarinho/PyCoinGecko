@@ -1,32 +1,75 @@
+# import numpy as np
+# import matplotlib.pyplot as plt
 
 import pandas as pd
-import matplotlib as plt
-import plotly as py
+import plotly.graph_objects as go
+from plotly.offline import plot
+import datetime
 from pycoingecko import CoinGeckoAPI
+from mplfinance.original_flavor import candlestick2_ohlc
 print('\n')
 
-
-
-# criando uma instância do pycoingecko
+# instância de classe CoinGeckoAPI
 cg = CoinGeckoAPI()
 
-# solicitando os valores da moeda em reais dos últimos 30 dias
-bitcoin_data = cg.get_coin_market_chart_by_id(id='bitcoin', vs_currency ='brl',days = 30)
 
-# printando a lista de valores pela coluna 'preços'
-data = pd.DataFrame(bitcoin_data['prices'], columns= ['timestamp','price'])
+'''
+!pegando os valores de bicoins dos últimos 30 dias com instância cg da classe CoinGeckoAPI
+!É um dicionário contendo uma matriz bi-dimmensional com colunas 0 e 1
+'''
+bitcoin_data = cg.get_coin_market_chart_by_id(id='bitcoin', vs_currency='brl', days=30)
 
-data['Date'] = pd.to_datetime(data['timestamp'], unit = 'ms')
 
-candlestick_data = data.groupby(data.Date.dt.date).agg({'price': ['min', 'max', 'first', 'last']})
+# separando somente pela coluna 'prices'
+bitcoin_price_data = bitcoin_data['prices']
 
-fig = go.Figure(data = [go.Candlestick(x = candlestick_data.index, open = candlestick_data['price']['first'],
-                                       high = candlestick_data['price']['max'],
-                                       low = candlestick_data['price']['min'],
-                                       close = candlestick_data['price']['last'])])
 
-fig.update_layout(xaxis_rangerslider_visible = False, xaxis_title = 'Date', yaxis_title = 'price (BRL)',
-                  title = 'Bitcoin Price')
+# transformando em um dataframe e organizando com as colunas 'TimeStamp' e 'price'
+data = pd.DataFrame(bitcoin_price_data, columns=['TimeStamp', 'Price'])
 
-py.plot(fig, filename = 'bitcoin_price.html')
+
+data['date'] = data['TimeStamp'].apply(lambda d: datetime.date.fromtimestamp(d/1000.0))
+
+
+
+candlestick_data = data.groupby(data.date, as_index=False).agg({"Price": ['min', 'max', 'first', 'last']})
+
+
+    # usando ploty através da instância go
+fig = go.Figure(data=[go.Candlestick(x=candlestick_data['date'],
+                open=candlestick_data['Price']['first'], 
+                high=candlestick_data['Price']['max'],
+                low=candlestick_data['Price']['min'], 
+                close=candlestick_data['Price']['last'])
+                ])
+
+fig.update_layout(xaxis_rangeslider_visible=False)
+
+fig.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
